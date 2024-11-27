@@ -19,10 +19,9 @@ function UserResults() {
   if (!loading) {
     return (
       <div className="grid grid-col-1 gap-8 xl:grid-col-4 lg:grid-col-3 md:grid-col-2">
-        {users.map((user) => {
-          <h3 className="text-blue-500">{user.login}</h3>;
-          console.log(user.login);
-        })}
+        {users.map((user) => (
+          <h3>{user.login}</h3>
+        ))}
       </div>
     );
   } else {
