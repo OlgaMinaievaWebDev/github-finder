@@ -1,67 +1,29 @@
+import axios from "axios";
+
+const github = axios.create({
+  baseURL: "https://api.github.com",
+});
+
 // Get search results
 export const searchUsers = async (text) => {
-  const params = new URLSearchParams({
-    q: text,
-  });
+  const params = new URLSearchParams({ q: text });
 
   try {
-    const response = await fetch(
-      `https://api.github.com/search/users?${params}`
-    );
-
-    if (!response.ok) {
-      throw new Error(`Error: ${response.status} - ${response.statusText}`);
-    }
-
-    const { items } = await response.json();
-
-    return items;
+    const response = await github.get(`/search/users?${params}`);
+    return response.data.items; // GitHub API returns users in `items`
   } catch (error) {
-    console.error("Fetch Users Error:", error.message);
+    console.error("Error fetching users:", error.message);
+    return []; // Return an empty array if an error occurs
   }
 };
 
-//get single user
-export const getUser = async (login) => {
-  try {
-    const response = await fetch(`https://api.github.com/users/${login}`);
+// Get single user and repo
 
-    if (!response.ok) {
-      throw new Error(`Error: ${response.status} - ${response.statusText}`);
-    }
+export const getUserAndRepos = async (login) => {
+  const [user, repos] = await Promise.all([
+    github.get(`/users/${login}`),
+    github.get(`/users/${login}/repos`),
+  ]);
 
-    if (response.status === 404) {
-      window.location = "/notfound";
-    } else {
-      const data = await response.json();
-
-      return data;
-    }
-  } catch (error) {
-    console.error("Fetch Users Error:", error.message);
-  }
-};
-
-//get user repos
-export const getUserRepos = async (login) => {
-  const params = new URLSearchParams({
-    sort: "created",
-    per_page: 10,
-  });
-
-  try {
-    const response = await fetch(
-      `https://api.github.com/users/${login}/repos?${params}`
-    );
-
-    if (!response.ok) {
-      throw new Error(`Error: ${response.status} - ${response.statusText}`);
-    }
-
-    const data = await response.json();
-
-    return data;
-  } catch (error) {
-    console.error("Fetch Users Error:", error.message);
-  }
+  return { user: user.data, repos: repos.data };
 };

@@ -4,24 +4,33 @@ import GithubContext from "../context/github/GithubContext";
 import { Link, useParams } from "react-router-dom";
 import Spinner from "../components/layout/Spinner";
 import RepoList from "../components/repos/RepoList";
-import { getUser, getUserRepos } from "../context/github/GithubActions";
+import { getUserAndRepos } from "../context/github/GithubActions";
 
 function User() {
   const { user, loading, repos, dispatch } = useContext(GithubContext);
-
   const params = useParams();
 
   useEffect(() => {
-    dispatchEvent({ type: "SET_LOADING" });
+    dispatch({ type: "SET_LOADING" });
     const getUserData = async () => {
-      const userData = await getUser(params.login);
-      dispatch({ type: "GET_USER", payload: userData });
-
-      const userRepoData = await getUserRepos(params.login);
-      dispatch({ type: "GET_Repos", payload: userRepoData });
+      try {
+        const userData = await getUserAndRepos(params.login);
+        dispatch({ type: "GET_USER_AND_REPOS", payload: userData });
+      } catch (error) {
+        console.error("Error fetching user data:", error.message);
+      }
     };
+
     getUserData();
-  }, []);
+  }, [dispatch, params.login]); // Include dependencies to avoid stale closures
+
+  if (loading) {
+    return <Spinner />;
+  }
+
+  if (!user) {
+    return <div>User not found.</div>;
+  }
 
   const {
     name,
@@ -40,10 +49,6 @@ function User() {
     hireable,
   } = user;
 
-  if (loading) {
-    return <Spinner />;
-  }
-
   return (
     <>
       <div className="w-full mx-auto lg:w-10/12">
@@ -56,7 +61,7 @@ function User() {
           <div className="custom-card-image mb-6 md:mb-0">
             <div className="rounded-lg shadow-xl card image-full">
               <figure>
-                <img src={avatar_url} alt="" />
+                <img src={avatar_url} alt={login} />
               </figure>
               <div className="card-body justify-end">
                 <h2 className="card-title mb-0">{name}</h2>
@@ -70,7 +75,7 @@ function User() {
                 {name}
                 <div className="ml-2 mr-1 badge badge-success">{type}</div>
                 {hireable && (
-                  <div className="mx-1 badge badge-info">Hirable</div>
+                  <div className="mx-1 badge badge-info">Hireable</div>
                 )}
               </h1>
               <p>{bio}</p>
